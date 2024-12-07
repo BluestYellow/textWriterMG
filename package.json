@@ -1,0 +1,13 @@
+{
+  "name": "text-writer",
+  "version": "1.0.0",
+  "description": "A text mining game",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox"
+  },
+  "dependencies": {
+    "electron": "^28.1.0",
+    "sqlite3": "^5.1.6"
+  }
+}

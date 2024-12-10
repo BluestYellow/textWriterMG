@@ -1,24 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Text Miner</title>
+    <title>Text Writer</title>
     <style>
         :root {
-            --primary-color: #6366f1;
-            --primary-hover: #4f46e5;
-            --danger-color: #ef4444;
-            --danger-hover: #dc2626;
-            --warning-color: #f59e0b;
-            --warning-hover: #d97706;
-            --background: #0f172a;
-            --surface: #1e293b;
-            --surface-light: #334155;
-            --text: #f8fafc;
-            --text-secondary: #94a3b8;
-            --success: #22c55e;
-            --border-radius: 12px;
-            --transition: all 0.3s ease;
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --text: #ecf0f1;
+            --background: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --success: #27ae60;
+            --danger: #c0392b;
         }
 
         * {
@@ -28,264 +21,270 @@
         }
 
         body {
-            margin: 0;
-            padding: 20px;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            display: flex;
-            height: 100vh;
+            font-family: Arial, sans-serif;
             background-color: var(--background);
             color: var(--text);
-            gap: 20px;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
-        
-        #main-content {
-            flex: 1;
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 200px;
+            background-color: var(--primary);
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 10px;
         }
 
-        .editor-container {
-            background: var(--surface);
+        .nav-button {
+            background-color: var(--secondary);
+            color: var(--text);
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .nav-button:hover {
+            background-color: var(--accent);
+        }
+
+        .nav-button.active {
+            background-color: var(--accent);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
             padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            overflow-y: auto;
         }
 
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Text Input Styles */
         #text-input {
             width: 100%;
-            height: 300px;
-            background-color: var(--surface-light);
+            height: 150px;
+            background-color: var(--card-bg);
             color: var(--text);
-            border: 2px solid var(--surface-light);
-            padding: 16px;
+            border: 1px solid var(--secondary);
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
             resize: vertical;
-            border-radius: var(--border-radius);
-            font-family: 'Fira Code', 'Cascadia Code', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            transition: var(--transition);
         }
 
-        #text-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        #controls {
+        /* Mining Controls */
+        .mining-controls {
             display: flex;
-            gap: 12px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        #sidebar {
-            width: 360px;
-            background-color: var(--surface);
-            padding: 24px;
-            border-radius: var(--border-radius);
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        .button {
+            background-color: var(--accent);
+            color: var(--text);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
 
+        .button:hover {
+            filter: brightness(1.1);
+        }
+
+        .button:disabled {
+            background-color: var(--secondary);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        #stop-mining {
+            background-color: var(--danger);
+        }
+
+        #clear-database {
+            background-color: var(--secondary);
+        }
+
+        /* Progress Styles */
         .progress-container {
-            background: var(--surface-light);
+            background-color: var(--card-bg);
+            border-radius: 5px;
             padding: 20px;
-            border-radius: var(--border-radius);
+            margin-bottom: 20px;
         }
 
         .progress-bar {
             width: 100%;
-            height: 12px;
-            background-color: var(--surface-light);
-            border-radius: 6px;
+            height: 20px;
+            background-color: var(--secondary);
+            border-radius: 10px;
             overflow: hidden;
-            margin: 12px 0;
+            margin: 10px 0;
         }
 
-        .progress {
+        #mining-progress {
             width: 0%;
             height: 100%;
-            background-color: var(--success);
-            transition: var(--transition);
+            background-color: var(--accent);
+            transition: width 0.5s ease-in-out;
         }
 
         .stats {
             display: grid;
-            gap: 16px;
-            margin-top: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
         }
 
-        .stat-item {
-            background: var(--surface-light);
-            padding: 16px;
-            border-radius: var(--border-radius);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+        .stat-card {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
         }
 
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .stat-value {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 8px;
-            padding: 4px;
-            background: var(--surface-light);
-            border-radius: var(--border-radius);
-        }
-
-        .tab-button {
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition);
-            font-weight: 500;
-        }
-
-        .tab-button.active {
-            background: var(--primary-color);
-            color: var(--text);
-        }
-
-        .tab-button:hover:not(.active) {
-            color: var(--text);
-            background: var(--surface-light);
-        }
-
-        .tab-content {
-            display: none;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
+        /* Mined Words List */
         #mined-words-list {
             list-style: none;
             display: grid;
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
         }
 
-        .mined-word {
-            background: var(--surface-light);
-            padding: 12px 16px;
-            border-radius: var(--border-radius);
+        .word-card {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 5px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: var(--transition);
-        }
-
-        .mined-word:hover {
-            transform: translateX(4px);
-        }
-
-        .word-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .word-text {
-            font-weight: 500;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .word-stats {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
+            font-size: 0.9em;
+            color: var(--text);
+            opacity: 0.8;
         }
 
-        .mined-count {
-            background: var(--primary-color);
-            color: var(--text);
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
+        /* Word Categories */
+        .word-category {
+            margin-bottom: 30px;
         }
 
-        button {
-            padding: 12px 24px;
-            border-radius: var(--border-radius);
-            border: none;
-            color: var(--text);
-            cursor: pointer;
-            transition: var(--transition);
-            font-weight: 500;
+        .word-category h3 {
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid;
+        }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .tier-mono h3 {
+            color: #95a5a6;
+            border-color: #95a5a6;
+        }
+
+        .tier-di h3 {
+            color: #3498db;
+            border-color: #3498db;
+        }
+
+        .tier-tri h3 {
+            color: #e67e22;
+            border-color: #e67e22;
+        }
+
+        .tier-poli h3 {
+            color: #e74c3c;
+            border-color: #e74c3c;
+        }
+
+        .word-card {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 5px;
             display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.875rem;
+            flex-direction: column;
+            gap: 5px;
+            border-left: 4px solid var(--secondary);
         }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .tier-mono .word-card {
+            border-left-color: #95a5a6;
         }
 
-        #start-mining {
-            background-color: var(--primary-color);
+        .tier-di .word-card {
+            border-left-color: #3498db;
         }
 
-        #start-mining:hover:not(:disabled) {
-            background-color: var(--primary-hover);
+        .tier-tri .word-card {
+            border-left-color: #e67e22;
         }
 
-        #stop-mining {
-            background-color: var(--danger-color);
+        .tier-poli .word-card {
+            border-left-color: #e74c3c;
         }
 
-        #stop-mining:hover:not(:disabled) {
-            background-color: var(--danger-hover);
+        /* Market Styles */
+        .market-container {
+            background-color: var(--card-bg);
+            border-radius: 5px;
+            padding: 20px;
         }
 
-        #clear-database {
-            background-color: var(--warning-color);
-        }
-
-        #clear-database:hover:not(:disabled) {
-            background-color: var(--warning-hover);
-        }
-
-        .mined-words-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
+        .coming-soon {
+            text-align: center;
             color: var(--text);
+            font-style: italic;
+            margin-top: 20px;
         }
 
-        .mining-status {
-            background: var(--surface-light);
-            padding: 16px;
-            border-radius: var(--border-radius);
-            margin-top: 16px;
-            border-left: 4px solid var(--primary-color);
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
         }
 
-        .mining-status strong {
-            color: var(--primary-color);
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            background-color: var(--secondary);
+            color: var(--text);
+            text-align: center;
+            padding: 5px 10px;
+            border-radius: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
         }
 
         @keyframes pulse {
@@ -297,108 +296,72 @@
         .mining-active {
             animation: pulse 2s infinite;
         }
-
-        .tooltip {
-            position: relative;
-        }
-
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 8px 12px;
-            background: var(--surface);
-            color: var(--text);
-            border-radius: 6px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            z-index: 1000;
-        }
-
-        .market-container {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .coming-soon {
-            color: var(--text);
-            font-style: italic;
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
-    <div id="main-content">
-        <div class="editor-container">
-            <textarea id="text-input" placeholder="Cole seu texto aqui para começar a mineração...&#10;&#10;As palavras serão mineradas uma a uma e armazenadas no banco de dados.&#10;Cada letra leva 3 segundos para ser minerada."></textarea>
-        </div>
-        <div id="controls">
-            <button id="start-mining" class="tooltip" data-tooltip="Iniciar mineração de palavras">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Começar Mineração
-            </button>
-            <button id="stop-mining" disabled class="tooltip" data-tooltip="Parar mineração atual">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
-                </svg>
-                Parar Mineração
-            </button>
-        </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <button class="nav-button active" data-page="mining">Mineração</button>
+        <button class="nav-button" data-page="inventory">Inventário</button>
+        <button class="nav-button" data-page="market">Mercado</button>
     </div>
-    <div id="sidebar">
-        <div class="tab-buttons">
-            <button class="tab-button active" data-tab="status">Status</button>
-            <button class="tab-button" data-tab="mined">Mineradas</button>
-            <button class="tab-button" data-tab="market">Mercado</button>
-        </div>
-        <div id="status-tab" class="tab-content active">
-            <div class="progress-container">
-                <h3>Progresso da Mineração</h3>
-                <div class="progress-bar">
-                    <div class="progress" id="mining-progress"></div>
-                </div>
-                <div id="progress-text" style="text-align: center;">0%</div>
-            </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-label">Palavras Restantes</div>
-                    <div class="stat-value" id="words-remaining">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Tempo Estimado</div>
-                    <div class="stat-value" id="estimated-time">0s</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Palavras Mineradas</div>
-                    <div class="stat-value" id="words-mined">0</div>
-                </div>
-            </div>
-        </div>
-        <div id="mined-tab" class="tab-content">
-            <div class="mined-words-header">
-                <h3>Palavras Mineradas</h3>
-                <button id="clear-database" class="tooltip" data-tooltip="Apagar todas as palavras mineradas">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Mining Page -->
+        <div id="mining-page" class="page active">
+            <textarea id="text-input" placeholder="Digite ou cole seu texto aqui..."></textarea>
+            <div class="mining-controls">
+                <button id="start-mining" class="button tooltip">
+                    Iniciar Mineração
+                    <span class="tooltiptext">Começar a minerar palavras do texto</span>
+                </button>
+                <button id="stop-mining" class="button tooltip" disabled>
+                    Parar Mineração
+                    <span class="tooltiptext">Interromper o processo de mineração</span>
+                </button>
+                <button id="clear-database" class="button tooltip">
                     Limpar Banco
+                    <span class="tooltiptext">Apagar todas as palavras mineradas</span>
                 </button>
             </div>
+            <div class="progress-container">
+                <h3>Status da Mineração</h3>
+                <div class="progress-bar">
+                    <div id="mining-progress"></div>
+                </div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h4>Progresso</h4>
+                        <p id="progress-text">0%</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Palavra Atual</h4>
+                        <p id="current-word">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Tempo Restante</h4>
+                        <p id="estimated-time">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Page -->
+        <div id="inventory-page" class="page">
+            <h2>Palavras Mineradas</h2>
             <ul id="mined-words-list"></ul>
         </div>
-        <div id="market-tab" class="tab-content">
+
+        <!-- Market Page -->
+        <div id="market-page" class="page">
             <div class="market-container">
-                <h3>Mercado</h3>
+                <h2>Mercado</h2>
                 <p class="coming-soon">Em breve...</p>
             </div>
         </div>
     </div>
+
     <script src="renderer.js"></script>
 </body>
 </html>

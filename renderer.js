@@ -14,7 +14,78 @@ let updateInterval = null;
 let currentTimeout = null;
 
 // Configurações de mineração
+const BASE_TIME = 3; // tempo base em segundos
 const MINING_TIME_PER_LETTER = 120; // segundos por letra
+
+// Configurações de tier
+const TIER_CONFIG = {
+    monossilaba: { discount: 0.30, label: 'Monossílaba', class: 'tier-mono' },
+    dissilaba: { discount: 0.20, label: 'Dissílaba', class: 'tier-di' },
+    trissilaba: { discount: 0.10, label: 'Trissílaba', class: 'tier-tri' },
+    polissilaba: { discount: 0.05, label: 'Polissílaba', class: 'tier-poli' }
+};
+
+// Função para contar sílabas em uma palavra
+function countSyllables(word) {
+    word = word.toLowerCase();
+    if (!word) return 0;
+
+    // Regras básicas para contar sílabas em português
+    const vowels = 'aáàãâeéêiíoóôõuú';
+    const diphthongs = ['ai', 'au', 'ei', 'eu', 'éu', 'ia', 'ie', 'io', 'iu', 'oi', 'ou', 'ua', 'ue', 'ui', 'uo'];
+    
+    let syllables = 0;
+    let isLastCharVowel = false;
+
+    for (let i = 0; i < word.length; i++) {
+        const char = word[i];
+        const nextChar = word[i + 1];
+        const isDiphthong = nextChar && diphthongs.includes(char + nextChar);
+
+        if (vowels.includes(char)) {
+            if (!isLastCharVowel || isDiphthong) {
+                syllables++;
+            }
+            isLastCharVowel = true;
+        } else {
+            isLastCharVowel = false;
+        }
+    }
+
+    return syllables || 1; // Retorna pelo menos 1 sílaba
+}
+
+// Função para classificar palavra por número de sílabas
+function classifyWord(word) {
+    const syllables = countSyllables(word);
+    
+    if (syllables === 1) return 'monossilaba';
+    if (syllables === 2) return 'dissilaba';
+    if (syllables === 3) return 'trissilaba';
+    return 'polissilaba';
+}
+
+// Função para calcular tempo de mineração baseado no tier
+function calculateMiningTime(word) {
+    const tier = classifyWord(word);
+    const baseTime = word.length * BASE_TIME;
+    const discount = TIER_CONFIG[tier].discount;
+    return baseTime - (baseTime * discount);
+}
+
+// Navegação entre páginas
+document.querySelectorAll('.nav-button').forEach(button => {
+    button.addEventListener('click', () => {
+        // Remove active class from all buttons and pages
+        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding page
+        button.classList.add('active');
+        const pageId = `${button.dataset.page}-page`;
+        document.getElementById(pageId).classList.add('active');
+    });
+});
 
 // Tab switching
 document.querySelectorAll('.tab-button').forEach(button => {
@@ -32,7 +103,41 @@ document.querySelectorAll('.tab-button').forEach(button => {
 });
 
 function updateMinedWordsList() {
-    ipcRenderer.send('get-mined-words');
+    const wordsList = document.getElementById('mined-words-list');
+    wordsList.innerHTML = '';
+
+    // Criar containers para cada categoria
+    const containers = {
+        monossilaba: document.createElement('div'),
+        dissilaba: document.createElement('div'),
+        trissilaba: document.createElement('div'),
+        polissilaba: document.createElement('div')
+    };
+
+    // Configurar containers
+    Object.entries(containers).forEach(([tier, container]) => {
+        container.className = `word-category ${TIER_CONFIG[tier].class}`;
+        container.innerHTML = `<h3>${TIER_CONFIG[tier].label}s</h3><div class="word-grid"></div>`;
+        wordsList.appendChild(container);
+    });
+
+    ipcRenderer.invoke('get-mined-words').then(words => {
+        words.forEach(word => {
+            const tier = classifyWord(word.word);
+            const container = containers[tier].querySelector('.word-grid');
+            
+            const wordCard = document.createElement('div');
+            wordCard.className = 'word-card';
+            wordCard.innerHTML = `
+                <strong>${word.word}</strong>
+                <div class="word-stats">
+                    <span>Sílabas: ${countSyllables(word.word)}</span>
+                    <span>Minerada: ${word.count}x</span>
+                </div>
+            `;
+            container.appendChild(wordCard);
+        });
+    });
 }
 
 ipcRenderer.on('mined-words-list', (event, words) => {
@@ -148,7 +253,7 @@ function updateLiveStats() {
     const currentWord = currentWords[0];
     const currentTime = Date.now();
     const elapsedTime = (currentTime - currentWordStartTime) / 1000;
-    const totalMiningTime = currentWord.length * MINING_TIME_PER_LETTER;
+    const totalMiningTime = calculateMiningTime(currentWord);
     const currentProgress = Math.min(100, (elapsedTime / totalMiningTime) * 100);
 
     // Atualiza progresso da palavra atual
@@ -161,7 +266,7 @@ function updateLiveStats() {
 
     // Atualiza tempo restante
     const remainingTimeForCurrentWord = Math.max(0, totalMiningTime - elapsedTime);
-    const remainingTimeForOtherWords = currentWords.slice(1).reduce((acc, word) => acc + (word.length * MINING_TIME_PER_LETTER), 0);
+    const remainingTimeForOtherWords = currentWords.slice(1).reduce((acc, word) => acc + calculateMiningTime(word), 0);
     const totalTimeRemaining = remainingTimeForCurrentWord + remainingTimeForOtherWords;
     
     document.getElementById('estimated-time').textContent = formatTime(Math.ceil(totalTimeRemaining));
@@ -194,7 +299,7 @@ function mineNextWord() {
     }
 
     const word = currentWords[0];
-    const miningTime = word.length * MINING_TIME_PER_LETTER * 1000; // converter para milissegundos
+    const miningTime = calculateMiningTime(word) * 1000; // converter para milissegundos
     currentWordStartTime = Date.now();
 
     // Remove the word from the text
